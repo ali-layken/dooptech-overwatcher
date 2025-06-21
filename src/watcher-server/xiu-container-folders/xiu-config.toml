@@ -1,3 +1,14 @@
+##########################
+#   LOG configurations   #
+##########################
+[log]
+level = "debug" # set log level
+[log.file]
+# write log to file or not（Writing logs to file or console cannot be satisfied at the same time）.
+enabled = false # enable logging to log files or not.
+rotate = "hour" #[day,hour,minute] ，set rotate level
+path = "./logs" # set log path
+
 #live server configurations
 ##########################
 #   RTMP configurations  #
@@ -24,4 +35,7 @@ port = 1935
 pull_enabled = true # enable pulling stream authentication or not.
 push_enabled = true  # enable pushing stream authentication or not.
 algorithm = "simple" # set authentication method, support simple authentication and MD5 authentication (fill in either "simple" or "md5" separately).
-# authsecret = "your-shared-secret"
+[authsecret]
+# used for simple authentication 
+key = "whatever"
+password = "thisisthepassword"
