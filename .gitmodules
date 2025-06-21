@@ -1,0 +1,3 @@
+[submodule "src/watcher-server/xiu"]
+	path = src/watcher-server/xiu
+	url = https://github.com/harlanc/xiu.git
