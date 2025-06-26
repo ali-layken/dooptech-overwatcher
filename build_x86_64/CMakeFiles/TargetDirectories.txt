@@ -1,0 +1,10 @@
+/home/bean/Documents/GitHub/dooptech-overwatcher/build_x86_64/CMakeFiles/plugin-support.dir
+/home/bean/Documents/GitHub/dooptech-overwatcher/build_x86_64/CMakeFiles/dooptech-herowatcher.dir
+/home/bean/Documents/GitHub/dooptech-overwatcher/build_x86_64/CMakeFiles/package.dir
+/home/bean/Documents/GitHub/dooptech-overwatcher/build_x86_64/CMakeFiles/package_source.dir
+/home/bean/Documents/GitHub/dooptech-overwatcher/build_x86_64/CMakeFiles/edit_cache.dir
+/home/bean/Documents/GitHub/dooptech-overwatcher/build_x86_64/CMakeFiles/rebuild_cache.dir
+/home/bean/Documents/GitHub/dooptech-overwatcher/build_x86_64/CMakeFiles/list_install_components.dir
+/home/bean/Documents/GitHub/dooptech-overwatcher/build_x86_64/CMakeFiles/install.dir
+/home/bean/Documents/GitHub/dooptech-overwatcher/build_x86_64/CMakeFiles/install/local.dir
+/home/bean/Documents/GitHub/dooptech-overwatcher/build_x86_64/CMakeFiles/install/strip.dir

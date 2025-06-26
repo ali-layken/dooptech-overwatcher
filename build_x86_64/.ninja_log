@@ -1,0 +1,6 @@
+# ninja log v6
+0	23	1750979050143646472	CMakeFiles/plugin-support.dir/plugin-support.c.o	432e459b99f8ea8c
+1	106	1750979050143646472	CMakeFiles/dooptech-herowatcher.dir/src/doopcrop.c.o	11764dd2a39b23ff
+0	195	1750979050143646472	CMakeFiles/dooptech-herowatcher.dir/src/plugin-main.cpp.o	15a6c95aa394cf64
+23	239	1750979050163646472	libplugin-support.a	dd2f7eb4f5172457
+239	288	1750979050379646467	dooptech-herowatcher.so	acfdf06ed99105f2

@@ -1,0 +1,4 @@
+/home/bean/Documents/GitHub/dooptech-overwatcher/./release/lib/x86_64-linux-gnu/obs-plugins/dooptech-herowatcher.so
+/home/bean/Documents/GitHub/dooptech-overwatcher/./release/share/obs/obs-plugins/dooptech-herowatcher/locale/en-US.ini
+/home/bean/Documents/GitHub/dooptech-overwatcher/./release/share/obs/obs-plugins/dooptech-herowatcher/crop_filter.effect
+/home/bean/Documents/GitHub/dooptech-overwatcher/./release/share/obs/obs-plugins/dooptech-herowatcher/color.effect
