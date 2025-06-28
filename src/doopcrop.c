@@ -27,7 +27,7 @@ struct hero_tracker_data {
 static const char *hero_tracker_get_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return obs_module_text("DoopFilter");
+	return obs_module_text("HeroTracker");
 }
 
 static void *hero_tracker_create(obs_data_t *settings, obs_source_t *context)
@@ -72,45 +72,38 @@ static void hero_tracker_update(void *data, obs_data_t *settings)
 {
 	struct hero_tracker_data *filter = data;
 
-	filter->absolute = !obs_data_get_bool(settings, "relative");
-	filter->left = (int)obs_data_get_int(settings, "left");
-	filter->top = (int)obs_data_get_int(settings, "top");
-	filter->right = (int)obs_data_get_int(settings, "right");
-	filter->bottom = (int)obs_data_get_int(settings, "bottom");
-	filter->abs_cx = (int)obs_data_get_int(settings, "cx");
-	filter->abs_cy = (int)obs_data_get_int(settings, "cy");
+	filter->left = (int)obs_data_get_int(settings, "crop_left");
+	filter->top = (int)obs_data_get_int(settings, "crop_top");
+	filter->right = (int)obs_data_get_int(settings, "crop_right");
+	filter->bottom = (int)obs_data_get_int(settings, "crop_bottom");
 }
 
-static bool relative_clicked(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
+static bool preview_weapon_clicked(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
 {
-	bool relative = obs_data_get_bool(settings, "relative");
+    bool preview_weapon = obs_data_get_bool(settings, "preview_weapon");
 
-	obs_property_set_description(obs_properties_get(props, "left"), relative ? obs_module_text("Crop.Left") : "X");
-	obs_property_set_description(obs_properties_get(props, "top"), relative ? obs_module_text("Crop.Top") : "Y");
+    obs_property_set_visible(obs_properties_get(props, "crop_group"), preview_weapon);
 
-	obs_property_set_visible(obs_properties_get(props, "right"), relative);
-	obs_property_set_visible(obs_properties_get(props, "bottom"), relative);
-	obs_property_set_visible(obs_properties_get(props, "cx"), !relative);
-	obs_property_set_visible(obs_properties_get(props, "cy"), !relative);
-
-	UNUSED_PARAMETER(p);
-	return true;
+    UNUSED_PARAMETER(p);
+    return true;
 }
 
 static obs_properties_t *hero_tracker_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *p = obs_properties_add_bool(props, "relative", obs_module_text("Crop.Relative"));
+	// Preview Weapon Crop Checkbox
+	obs_property_t *p= obs_properties_add_bool(props, "preview_weapon", obs_module_text("Preview.Weapon"));
+    obs_property_set_modified_callback(p, preview_weapon_clicked);
+	
+	obs_properties_t *crop_group_props = obs_properties_create();
+	obs_properties_add_group(props, "crop_group", obs_module_text("Crop.Group"), OBS_GROUP_NORMAL, crop_group_props);
 
-	obs_property_set_modified_callback(p, relative_clicked);
-
-	obs_properties_add_int(props, "left", obs_module_text("Crop.Left"), -8192, 8192, 1);
-	obs_properties_add_int(props, "top", obs_module_text("Crop.Top"), -8192, 8192, 1);
-	obs_properties_add_int(props, "right", obs_module_text("Crop.Right"), -8192, 8192, 1);
-	obs_properties_add_int(props, "bottom", obs_module_text("Crop.Bottom"), -8192, 8192, 1);
-	obs_properties_add_int(props, "cx", obs_module_text("Crop.Width"), 0, 8192, 1);
-	obs_properties_add_int(props, "cy", obs_module_text("Crop.Height"), 0, 8192, 1);
+	// Weapon crop region settings
+	obs_properties_add_int(crop_group_props, "crop_left", obs_module_text("Crop.Left"), -8192, 8192, 1);
+	obs_properties_add_int(crop_group_props, "crop_right", obs_module_text("Crop.Right"), -8192, 8192, 1);
+	obs_properties_add_int(crop_group_props, "crop_top", obs_module_text("Crop.Top"), -8192, 8192, 1);
+	obs_properties_add_int(crop_group_props, "crop_bottom", obs_module_text("Crop.Bottom"), -8192, 8192, 1);
 
 	UNUSED_PARAMETER(data);
 	return props;
@@ -118,7 +111,11 @@ static obs_properties_t *hero_tracker_properties(void *data)
 
 static void hero_tracker_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_bool(settings, "relative", true);
+	obs_data_set_default_bool(settings, "preview_binarization", false);
+	obs_data_set_default_int(settings, "crop_left", 0);
+	obs_data_set_default_int(settings, "crop_right", 0);
+	obs_data_set_default_int(settings, "crop_top", 0);
+	obs_data_set_default_int(settings, "crop_bottom", 0);
 }
 
 static void calc_crop_dimensions(struct hero_tracker_data *filter, struct vec2 *mul_val, struct vec2 *add_val)
@@ -134,13 +131,15 @@ static void calc_crop_dimensions(struct hero_tracker_data *filter, struct vec2 *
 		height = obs_source_get_base_height(target);
 	}
 
-	if (filter->absolute) {
-		filter->width = filter->abs_cx;
-		filter->height = filter->abs_cy;
-	} else {
+	bool preview_weapon = obs_data_get_bool(obs_source_get_settings(filter->context), "preview_weapon");
+
+	if (preview_weapon) {
 		filter->width = (int)width - filter->left - filter->right;
 		filter->height = (int)height - filter->top - filter->bottom;
-	}
+	} else {
+        filter->width = (int)width;
+        filter->height = (int)height;
+    }
 
 	if (filter->width < 1)
 		filter->width = 1;

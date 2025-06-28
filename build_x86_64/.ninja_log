@@ -4,3 +4,15 @@
 0	195	1750979050143646472	CMakeFiles/dooptech-herowatcher.dir/src/plugin-main.cpp.o	15a6c95aa394cf64
 23	239	1750979050163646472	libplugin-support.a	dd2f7eb4f5172457
 239	288	1750979050379646467	dooptech-herowatcher.so	acfdf06ed99105f2
+7	161	1751131732647485435	CMakeFiles/dooptech-herowatcher.dir/src/doopcrop.c.o	11764dd2a39b23ff
+161	227	1751131732803485432	dooptech-herowatcher.so	acfdf06ed99105f2
+1	111	1751132665723465115	CMakeFiles/dooptech-herowatcher.dir/src/doopcrop.c.o	11764dd2a39b23ff
+111	171	1751132665835465113	dooptech-herowatcher.so	acfdf06ed99105f2
+1	110	1751133129111455024	CMakeFiles/dooptech-herowatcher.dir/src/doopcrop.c.o	11764dd2a39b23ff
+110	174	1751133129223455021	dooptech-herowatcher.so	acfdf06ed99105f2
+0	117	1751133324535450768	CMakeFiles/dooptech-herowatcher.dir/src/doopcrop.c.o	11764dd2a39b23ff
+118	179	1751133324651450765	dooptech-herowatcher.so	acfdf06ed99105f2
+1	103	1751134223539431190	CMakeFiles/dooptech-herowatcher.dir/src/doopcrop.c.o	11764dd2a39b23ff
+103	159	1751134223643431187	dooptech-herowatcher.so	acfdf06ed99105f2
+1	105	1751134314031429219	CMakeFiles/dooptech-herowatcher.dir/src/doopcrop.c.o	11764dd2a39b23ff
+105	160	1751134314135429217	dooptech-herowatcher.so	acfdf06ed99105f2
