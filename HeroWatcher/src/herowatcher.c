@@ -24,6 +24,7 @@ struct hero_watcher_data {
 
     /// Other
     int refresh_seconds;
+	float remaining_time;
     bool preview;
 	bool tagging;
 
@@ -226,13 +227,9 @@ static void hero_watcher_update(void *data, obs_data_t *settings)
 	filter->bottom  = (int)obs_data_get_int(settings, "bottom");
 
 	// Update Tagging Settings
-	filter->bottom  = (int)obs_data_get_int(settings, "bottom");
-	filter->tagging = obs_data_get_bool(settings, "refresh_seconds");
-
-
-
-	blog(LOG_INFO, "[shader uniforms] size: %d x %d | left: %d right: %d top: %d bottom: %d", 
-     filter->width, filter->height, filter->left, filter->right, filter->top, filter->bottom);
+	filter->refresh_seconds  = (int)obs_data_get_int(settings, "refresh_seconds");
+	filter->tagging = obs_data_get_bool(settings, "tagging_enabled");
+	filter->remaining_time = (float)filter->refresh_seconds;
 
 }
 
@@ -270,11 +267,17 @@ static void calc_crop_dimensions(struct hero_watcher_data *filter, struct vec2 *
 
 static void hero_watcher_tick(void *data, float seconds)
 {
-	UNUSED_PARAMETER(seconds);
 	struct hero_watcher_data *filter = data;
 	vec2_zero(&filter->mul_val);
 	vec2_zero(&filter->add_val);
 	calc_crop_dimensions(filter, &filter->mul_val, &filter->add_val);
+	if(filter->tagging){
+		filter->remaining_time -= seconds;
+		if(filter->remaining_time < 0){
+				blog(LOG_INFO, "Timer Reset!");
+				filter->remaining_time = (float)filter->refresh_seconds;
+		}
+	}
 }
 
 struct obs_source_info hero_watcher = {
