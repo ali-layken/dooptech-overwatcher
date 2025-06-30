@@ -1,3 +1,2 @@
 /home/bean/Documents/GitHub/dooptech-overwatcher/HeroWatcher/./release/lib/x86_64-linux-gnu/obs-plugins/dooptech-herowatcher.so
 /home/bean/Documents/GitHub/dooptech-overwatcher/HeroWatcher/./release/share/obs/obs-plugins/dooptech-herowatcher/locale/en-US.ini
-/home/bean/Documents/GitHub/dooptech-overwatcher/HeroWatcher/./release/share/obs/obs-plugins/dooptech-herowatcher/locale/weapon_crop.effect

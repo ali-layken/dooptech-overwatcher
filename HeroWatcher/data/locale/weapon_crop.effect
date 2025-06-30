@@ -1,8 +1,0 @@
-uniform texture2d image;
-
-technique Draw {
-	pass {
-		vertex_shader = DrawVertexShader;
-		fragment_shader = DrawSRGBPixelShader;
-	}
-}
