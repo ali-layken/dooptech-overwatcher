@@ -1,5 +1,8 @@
 #include <obs-module.h>
 #include <graphics/vec2.h>
+#include <util/threading.h>
+#include <util/platform.h>
+
 struct hero_watcher_data {
     // OBS Plugin API Members
     obs_source_t *context;
@@ -20,13 +23,15 @@ struct hero_watcher_data {
 	int right;
 	int top;
 	int bottom;
+	bool preview;
 
 
-    /// Other
+    //// Detection
     int refresh_seconds;
 	float remaining_time;
-    bool preview;
 	bool tagging;
+	bool hero_detection_running;
+    pthread_t hero_thread;
 
 };
 
@@ -267,6 +272,33 @@ static void calc_crop_dimensions(struct hero_watcher_data *filter, struct vec2 *
 	}
 }
 
+static void *hero_detection_thread(void *data)
+{
+    os_set_thread_name("hero_detect_thread");
+    struct hero_watcher_data *filter = (struct hero_watcher_data *)data;
+    blog(LOG_DEBUG, "[%s] Starting hero detection thread", __func__);
+
+    os_sleep_ms(17000);
+
+	blog(LOG_DEBUG, "[%s] Hero detection thread done", __func__);
+	os_atomic_store_bool(&filter->hero_detection_running, false);
+    return NULL;
+}
+
+static void init_hero_detection(struct hero_watcher_data *filter)
+{
+    if (os_atomic_load_bool(&filter->hero_detection_running))
+        return;
+
+    os_atomic_store_bool(&filter->hero_detection_running, true);
+
+    int ret = pthread_create(&filter->hero_thread, NULL, hero_detection_thread, filter);
+    if (ret != 0) {
+        blog(LOG_ERROR, "Failed to create hero detection thread: %d", ret);
+        os_atomic_store_bool(&filter->hero_detection_running, false);
+    }
+}
+
 static void hero_watcher_tick(void *data, float seconds)
 {
 	struct hero_watcher_data *filter = data;
@@ -278,15 +310,12 @@ static void hero_watcher_tick(void *data, float seconds)
 		if(filter->remaining_time < 0){
 				blog(LOG_DEBUG, "Timer Resetting!");
 				filter->remaining_time = (float)filter->refresh_seconds;
-				hero_detection();
+				init_hero_detection(filter);
 		}
 	}
 }
 
-static void hero_detection()
-{
-	return;
-}
+
 
 struct obs_source_info hero_watcher = {
 	.id = "hero_watcher",
