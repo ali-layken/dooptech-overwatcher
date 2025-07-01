@@ -44,11 +44,13 @@ static void *hero_watcher_create(obs_data_t *settings, obs_source_t *context)
 
 	// Load Crop Effect Shader
 	char *effect_path = obs_module_file("crop_filter.effect");
+	blog(LOG_DEBUG, "Loading crop effect from: %s", effect_path);
 	obs_enter_graphics();
 	filter->effect = gs_effect_create_from_file(effect_path, NULL);
 	obs_leave_graphics();
 	bfree(effect_path);
 	if (!filter->effect) {
+		blog(LOG_ERROR, "Crop effect not loaded properly.");
 		bfree(filter);
 		return NULL;
 	}
@@ -174,8 +176,8 @@ static void hero_watcher_render(void *data, gs_effect_t *effect)
 
 static void hero_watcher_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_bool(settings, "preview", true);
-	obs_data_set_default_bool(settings, "preview", false);
+	obs_data_set_default_bool(settings, "preview_weapon", false);
+	obs_data_set_default_bool(settings, "tagging_enabled", false);
 	obs_data_set_default_int(settings, "refresh_seconds", 30);
 }
 
@@ -274,10 +276,16 @@ static void hero_watcher_tick(void *data, float seconds)
 	if(filter->tagging){
 		filter->remaining_time -= seconds;
 		if(filter->remaining_time < 0){
-				blog(LOG_INFO, "Timer Reset!");
+				blog(LOG_DEBUG, "Timer Resetting!");
 				filter->remaining_time = (float)filter->refresh_seconds;
+				hero_detection();
 		}
 	}
+}
+
+static void hero_detection()
+{
+	return;
 }
 
 struct obs_source_info hero_watcher = {
