@@ -1,39 +1,6 @@
-#include <obs-module.h>
-#include <graphics/vec2.h>
-#include <util/threading.h>
-#include <util/platform.h>
+#include "herowatcher_plugin.h"
+#include "herowatcher_detector.h"
 
-struct hero_watcher_data {
-    // OBS Plugin API Members
-    obs_source_t *context;
-	gs_effect_t *effect;
-    int width;
-	int height;
-
-	//// OBS Shader Parameters
-	gs_eparam_t *param_mul;
-	gs_eparam_t *param_add;
-	gs_eparam_t *param_multiplier;
-	struct vec2 mul_val;
-	struct vec2 add_val;
-
-    // Actual Plugin Setting Members
-    //// Crop
-	int left;
-	int right;
-	int top;
-	int bottom;
-	bool preview;
-
-
-    //// Detection
-    int refresh_seconds;
-	float remaining_time;
-	bool tagging;
-	bool hero_detection_running;
-    pthread_t hero_thread;
-
-};
 
 static const char *hero_watcher_get_name(void *unused)
 {
@@ -209,7 +176,7 @@ static obs_properties_t *hero_watcher_properties(void *data)
 	obs_property_set_modified_callback(p2, preview_weapon_enabled);
 
 	obs_properties_t *crop_group_props = obs_properties_create();
-	obs_properties_add_group(props, "crop_group", obs_module_text("Crop.Group"), OBS_GROUP_NORMAL, crop_group_props);
+	obs_properties_add_group(props, "crop_group", obs_module_text("CropGroup"), OBS_GROUP_NORMAL, crop_group_props);
 	obs_properties_add_int(crop_group_props, "left", obs_module_text("CropLeft"), -8192, 8192, 1);
 	obs_properties_add_int(crop_group_props, "top", obs_module_text("CropTop"), -8192, 8192, 1);
 	obs_properties_add_int(crop_group_props, "right", obs_module_text("CropRight"), -8192, 8192, 1);
@@ -272,19 +239,6 @@ static void calc_crop_dimensions(struct hero_watcher_data *filter, struct vec2 *
 	}
 }
 
-static void *hero_detection_thread(void *data)
-{
-    os_set_thread_name("hero_detect_thread");
-    struct hero_watcher_data *filter = (struct hero_watcher_data *)data;
-    blog(LOG_DEBUG, "[%s] Starting hero detection thread", __func__);
-
-    os_sleep_ms(17000);
-
-	blog(LOG_DEBUG, "[%s] Hero detection thread done", __func__);
-	os_atomic_store_bool(&filter->hero_detection_running, false);
-    return NULL;
-}
-
 static void init_hero_detection(struct hero_watcher_data *filter)
 {
     if (os_atomic_load_bool(&filter->hero_detection_running))
@@ -314,8 +268,6 @@ static void hero_watcher_tick(void *data, float seconds)
 		}
 	}
 }
-
-
 
 struct obs_source_info hero_watcher = {
 	.id = "hero_watcher",

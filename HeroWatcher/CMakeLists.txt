@@ -36,7 +36,8 @@ endif()
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE 
   src/plugin-main.c
-  src/herowatcher.c
+  src/herowatcher_plugin.c
+  src/herowatcher_detector.c
 )
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})
