@@ -3,10 +3,6 @@
 
 #include <util/platform.h>
 
-// Forward declare struct from plugin
-struct hero_watcher_data;
-
-
 // Function declaration
 void *hero_detection_thread(void *data);
 

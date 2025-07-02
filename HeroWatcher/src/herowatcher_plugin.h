@@ -36,6 +36,4 @@ struct hero_watcher_data {
 
 };
 
-void *hero_detection_thread(void *data);
-
 #endif 
