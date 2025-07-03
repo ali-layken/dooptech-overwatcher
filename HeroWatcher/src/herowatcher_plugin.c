@@ -16,13 +16,13 @@ static void *hero_watcher_create(obs_data_t *settings, obs_source_t *context)
 
 	// Load Crop Effect Shader
 	char *effect_path = obs_module_file("crop_filter.effect");
-	blog(LOG_DEBUG, "Loading crop effect from: %s", effect_path);
+	blog(LOG_DEBUG, "[%s] Loading crop effect from: %s", __func__, effect_path);
 	obs_enter_graphics();
 	filter->effect = gs_effect_create_from_file(effect_path, NULL);
 	obs_leave_graphics();
 	bfree(effect_path);
 	if (!filter->effect) {
-		blog(LOG_ERROR, "Crop effect not loaded properly.");
+		blog(LOG_ERROR, "[%s] Crop effect not loaded properly.", __func__);
 		bfree(filter);
 		return NULL;
 	}
@@ -248,7 +248,7 @@ static void init_hero_detection(struct hero_watcher_data *filter)
 
     int ret = pthread_create(&filter->hero_thread, NULL, hero_detection_thread, filter);
     if (ret != 0) {
-        blog(LOG_ERROR, "Failed to create hero detection thread: %d", ret);
+        blog(LOG_ERROR, "[%s] Failed to create hero detection thread: %d", __func__, ret);
         os_atomic_store_bool(&filter->hero_detection_running, false);
     }
 }
@@ -262,7 +262,7 @@ static void hero_watcher_tick(void *data, float seconds)
 	if(filter->tagging){
 		filter->remaining_time -= seconds;
 		if(filter->remaining_time < 0){
-				blog(LOG_DEBUG, "Timer Resetting!");
+				blog(LOG_DEBUG, "[%s] Timer Resetting!", __func__);
 				filter->remaining_time = (float)filter->refresh_seconds;
 				init_hero_detection(filter);
 		}
