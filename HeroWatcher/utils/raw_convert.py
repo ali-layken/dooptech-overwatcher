@@ -2,10 +2,10 @@ from PIL import Image
 import sys
 
 # Fill these in from your logs
-WIDTH = 1920  # example
+WIDTH = 920  # example
 HEIGHT = 1080  # example
 
-with open("../crop_1751749626.raw", "rb") as f:
+with open("../crop_test.raw", "rb") as f:
     data = f.read()
 
 img = Image.frombytes("RGBA", (WIDTH, HEIGHT), data)

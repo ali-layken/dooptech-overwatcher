@@ -54,6 +54,21 @@ static const char *hero_watcher_get_name(void *unused)
 	return obs_module_text("HeroWatcher");
 }
 
+static void hero_watcher_enable(void *data, calldata_t *cd)
+{
+	struct hero_watcher_data *filter = data;
+	bool enable = calldata_bool(cd, "enabled");
+	if (enable) {
+		blog(LOG_DEBUG, "[%s] Enable callback: enable", __func__);
+		filter->remaining_time = filter->refresh_seconds;
+		filter->active = true;
+	} else {
+		blog(LOG_DEBUG, "[%s] Enable callback: disable", __func__);
+		filter->active = false;
+	}
+}
+
+
 static void *hero_watcher_create(obs_data_t *settings, obs_source_t *context)
 {
 	// Setup Filter
@@ -62,7 +77,6 @@ static void *hero_watcher_create(obs_data_t *settings, obs_source_t *context)
 
 	// Load crop effect shader & grab target source info
 	char *effect_path = obs_module_file("crop_filter.effect");
-	blog(LOG_DEBUG, "[%s] Loading crop effect from: %s", __func__, effect_path);
 	obs_enter_graphics();
 	filter->effect = gs_effect_create_from_file(effect_path, NULL);
 	obs_leave_graphics();
@@ -79,6 +93,17 @@ static void *hero_watcher_create(obs_data_t *settings, obs_source_t *context)
 	filter->param_multiplier = gs_effect_get_param_by_name(filter->effect, "multiplier");
 
 	obs_source_update(context, settings);
+
+	signal_handler_t *sh_filter = obs_source_get_signal_handler(context);
+	if (!sh_filter)
+	{
+		blog(LOG_ERROR, "[%s] Failed to get signal handler", __func__);
+		filter->active = false;
+		return NULL;
+	}
+
+	signal_handler_connect(sh_filter, "enable", hero_watcher_enable, filter);
+
 	return filter;
 }
 
@@ -226,9 +251,11 @@ static void calc_crop_dimensions(struct hero_watcher_data *filter, struct vec2 *
 
 static void init_hero_detection(struct hero_watcher_data *filter)
 {
-    if (os_atomic_load_bool(&filter->hero_detection_running) || !filter->color_format || filter->color_format == GS_UNKNOWN)
+    if (os_atomic_load_bool(&filter->hero_detection_running))
+	{
+		blog(LOG_WARNING, "[%s] Long running detection thread", __func__);
         return;
-
+	}
     os_atomic_store_bool(&filter->hero_detection_running, true);
 
     int ret = pthread_create(&filter->hero_thread, NULL, hero_detection_thread, filter);
@@ -244,7 +271,8 @@ static void hero_watcher_tick(void *data, float seconds)
 	vec2_zero(&filter->mul_val);
 	vec2_zero(&filter->add_val);
 	calc_crop_dimensions(filter, &filter->mul_val, &filter->add_val);
-	if(filter->tagging){
+	if(filter->tagging && filter->active && !filter->preview)
+	{
 		filter->remaining_time -= seconds;
 		if(filter->remaining_time < 0){
 				blog(LOG_DEBUG, "[%s] Resetting timer...", __func__);
@@ -282,6 +310,19 @@ static void hero_watcher_add(void *data, obs_source_t *source)
 	obs_leave_graphics();
 }
 
+void hero_watcher_activate(void *data)
+{
+	struct hero_watcher_data *filter = data;
+	filter->remaining_time = filter->refresh_seconds;
+	filter->active = true;
+}
+
+void hero_watcher_deactivate(void *data)
+{
+	struct hero_watcher_data *filter = data;
+	filter->active = false;
+}
+
 struct obs_source_info hero_watcher = {
 	.id = "hero_watcher",
     .type = OBS_SOURCE_TYPE_FILTER,
@@ -294,6 +335,8 @@ struct obs_source_info hero_watcher = {
 	.get_defaults = hero_watcher_defaults,
 	.get_properties = hero_watcher_properties,
 	.update = hero_watcher_update,
+	.activate = hero_watcher_activate,
+	.deactivate = hero_watcher_deactivate,
 	.video_tick = hero_watcher_tick,
     .video_render = hero_watcher_render,
 	.filter_add = hero_watcher_add

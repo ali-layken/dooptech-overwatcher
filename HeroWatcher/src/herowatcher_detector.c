@@ -22,7 +22,6 @@ static bool hero_crop_init(struct hero_crop_context *ctx, void *data)
 		return false;
 	}
 
-	blog(LOG_DEBUG, "[%s] Found colorspace, technique, multiplier, and format", __func__);
 	uint32_t source_width = obs_source_get_width(ctx->target);
 	uint32_t source_height = obs_source_get_height(ctx->target);
 	ctx->crop_width = (uint32_t)(ctx->filter->mul_val.x * source_width);
@@ -33,7 +32,6 @@ static bool hero_crop_init(struct hero_crop_context *ctx, void *data)
 		return false;
 	}
 
-	blog(LOG_DEBUG, "[%s] Thread context set successfully", __func__);
 	return true;
 }
 
@@ -43,11 +41,8 @@ static void hero_crop_save(struct hero_crop_context *ctx)
 	uint32_t linesize;
 	bool mapped = gs_stagesurface_map(ctx->stage, &savedata, &linesize);
 
-	blog(LOG_DEBUG, "[%s] Starting file save...", __func__);
 	if (mapped) {
-		time_t now = time(NULL);
-		char filename[128];
-		snprintf(filename, sizeof(filename), "crop_%ld.raw", now);
+		const char *filename = "crop_test.raw";
 
 		FILE *f = os_fopen(filename, "wb");
 		if (f) {
@@ -55,7 +50,7 @@ static void hero_crop_save(struct hero_crop_context *ctx)
 				fwrite(savedata + y * linesize, 1, ctx->crop_width * 4, f);
 			}
 			fclose(f);
-			blog(LOG_INFO, "[%s] Saved cropped RGBA frame to %s", __func__, filename);
+			blog(LOG_INFO, "[%s] Saved cropped frame to %s", __func__, filename);
 		} else {
 			blog(LOG_ERROR, "[%s] Failed to open file %s", __func__, filename);
 		}
@@ -74,19 +69,11 @@ void *hero_detection_thread(void *data)
 		blog(LOG_ERROR, "[%s] Hero detection thread failed to initiate.", __func__);
 		goto done;
 	}
-	blog(LOG_DEBUG, "[%s] Entering graphics context!", __func__);
+
 	obs_enter_graphics();
 		ctx.texrender = gs_texrender_create(ctx.filter->color_format, GS_ZS_NONE);
 		ctx.stage = gs_stagesurface_create(ctx.crop_width, ctx.crop_height, ctx.filter->color_format);
-		bool begin_success = ctx.texrender &&
-							 ctx.stage &&
-							 gs_texrender_begin(ctx.texrender, ctx.crop_width, ctx.crop_height);
-			if (!begin_success) {
-				blog(LOG_ERROR, "[%s] Failed to create texrender and stage", __func__);
-				goto cleanup;
-			
-			}
-			blog(LOG_DEBUG, "[%s] Created texrender and stage surface successfully", __func__);
+		gs_texrender_begin(ctx.texrender, ctx.crop_width, ctx.crop_height);
 
 			gs_ortho(0.0f, (float)ctx.crop_width, 0.0f, (float)ctx.crop_height, -100.0f, 100.0f);
 			gs_set_viewport(0, 0, ctx.crop_width, ctx.crop_height);
@@ -104,8 +91,6 @@ void *hero_detection_thread(void *data)
 		} else {
 			blog(LOG_ERROR, "[%s] Failed to get texture from texrender", __func__);
 		}
-
-cleanup:
 		if (ctx.stage)
 			gs_stagesurface_destroy(ctx.stage);
 		if (ctx.texrender)

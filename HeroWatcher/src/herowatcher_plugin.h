@@ -33,6 +33,7 @@ struct hero_watcher_data {
 	int top;
 	int bottom;
 	bool preview;
+	bool active;
 
     //// Detection
 	int refresh_seconds;
