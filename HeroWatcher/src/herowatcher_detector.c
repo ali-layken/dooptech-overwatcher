@@ -27,6 +27,7 @@ static bool hero_crop_init(struct hero_crop_context *ctx, void *data)
 	uint32_t source_height = obs_source_get_height(ctx->target);
 	ctx->crop_width = (uint32_t)(ctx->filter->mul_val.x * source_width);
 	ctx->crop_height = (uint32_t)(ctx->filter->mul_val.y * source_height);
+	blog(LOG_DEBUG, "[%s] crop_width: %u, crop_height: %u", __func__, ctx->crop_width, ctx->crop_height);
 	if (ctx->crop_width == 0 || ctx->crop_height == 0) {
 		blog(LOG_ERROR, "[%s] Invalid crop values!", __func__);
 		return false;
@@ -36,56 +37,11 @@ static bool hero_crop_init(struct hero_crop_context *ctx, void *data)
 	return true;
 }
 
-static void hero_crop_render(struct hero_crop_context *ctx)
-{
-	ctx->texrender = gs_texrender_create(ctx->filter->format, GS_ZS_NONE);
-	ctx->stage = gs_stagesurface_create(ctx->crop_width, ctx->crop_height, ctx->filter->format);
-	bool begin_success = ctx->texrender &&
-						 ctx->stage &&
-						 gs_texrender_begin(ctx->texrender, ctx->crop_width, ctx->crop_height);
-    
-	if (!begin_success) {
-		blog(LOG_DEBUG, "[%s] Failed to create texrender and stage", __func__);
-		return false;
-	}
-	gs_ortho(0.0f, (float)ctx->crop_width, 0.0f, (float)ctx->crop_height, -100.0f, 100.0f);
-	gs_set_viewport(0, 0, ctx->crop_width, ctx->crop_height);
-	gs_clear(GS_CLEAR_COLOR, NULL, 0.0f, 0);
-	blog(LOG_DEBUG, "[%s] Canvas set", __func__);
-
-
-	if (obs_source_process_filter_begin_with_color_space(ctx->filter->context, format, source_space,
-	                                                     OBS_NO_DIRECT_RENDERING)) {
-		blog(LOG_DEBUG, "[%s] Set crop effect shader params", __func__);
-		gs_effect_set_vec2(ctx->filter->param_mul, &ctx->filter->mul_val);
-		gs_effect_set_vec2(ctx->filter->param_add, &ctx->filter->add_val);
-		gs_effect_set_float(ctx->filter->param_multiplier, multiplier);
-
-		blog(LOG_DEBUG, "[%s] Run Shader??", __func__);
-		gs_blend_state_push();
-		gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
-
-		obs_source_process_filter_tech_end(ctx->filter->context, ctx->filter->effect,
-		                                   ctx->crop_width, ctx->crop_height, technique);
-
-		gs_blend_state_pop();
-	}
-	gs_texrender_end(ctx->texrender);
-
-	gs_texture_t *tex = gs_texrender_get_texture(ctx->texrender);
-	gs_stage_texture(ctx->stage, tex);
-	blog(LOG_DEBUG, "[%s] Cropped image saved in texture", __func__);
-	obs_leave_graphics();
-}
-
 static void hero_crop_save(struct hero_crop_context *ctx)
 {
 	uint8_t *savedata;
 	uint32_t linesize;
-
-	obs_enter_graphics();
 	bool mapped = gs_stagesurface_map(ctx->stage, &savedata, &linesize);
-	obs_leave_graphics();
 
 	blog(LOG_DEBUG, "[%s] Starting file save...", __func__);
 	if (mapped) {
@@ -104,9 +60,7 @@ static void hero_crop_save(struct hero_crop_context *ctx)
 			blog(LOG_ERROR, "[%s] Failed to open file %s", __func__, filename);
 		}
 
-		obs_enter_graphics();
 		gs_stagesurface_unmap(ctx->stage);
-		obs_leave_graphics();
 	}
 }
 
@@ -116,21 +70,48 @@ void *hero_detection_thread(void *data)
 	struct hero_crop_context ctx = {0};
     
 	if (!hero_crop_init(&ctx, data))
+	{
+		blog(LOG_ERROR, "[%s] Hero detection thread failed to initiate.", __func__);
 		goto done;
-
+	}
 	blog(LOG_DEBUG, "[%s] Entering graphics context!", __func__);
 	obs_enter_graphics();
-	hero_crop_render(&ctx);
-	hero_crop_save(&ctx);
+		ctx.texrender = gs_texrender_create(ctx.filter->color_format, GS_ZS_NONE);
+		ctx.stage = gs_stagesurface_create(ctx.crop_width, ctx.crop_height, ctx.filter->color_format);
+		bool begin_success = ctx.texrender &&
+							 ctx.stage &&
+							 gs_texrender_begin(ctx.texrender, ctx.crop_width, ctx.crop_height);
+			if (!begin_success) {
+				blog(LOG_ERROR, "[%s] Failed to create texrender and stage", __func__);
+				goto cleanup;
+			
+			}
+			blog(LOG_DEBUG, "[%s] Created texrender and stage surface successfully", __func__);
+			struct vec4 clear_color = {1.0f, 0.0f, 0.0f, 1.0f};
+			gs_clear(GS_CLEAR_COLOR, &clear_color, 0.0f, 0);
+		gs_texrender_end(ctx.texrender);
+
+		blog(LOG_DEBUG, "[%s] Grabbing cropped image from GPU", __func__);
+		gs_texture_t *tex = gs_texrender_get_texture(ctx.texrender);
+		if (tex)
+		{
+			gs_stage_texture(ctx.stage, tex);
+			gs_flush(); 
+			os_sleepto_ns(os_gettime_ns() + 20 * 1000000); 
+			hero_crop_save(&ctx);
+		} else {
+			blog(LOG_ERROR, "[%s] Failed to get texture from texrender", __func__);
+		}
 
 cleanup:
-	if (ctx.stage)
-		gs_stagesurface_destroy(ctx.stage);
-	if (ctx.texrender)
-		gs_texrender_destroy(ctx.texrender);
+		if (ctx.stage)
+			gs_stagesurface_destroy(ctx.stage);
+		if (ctx.texrender)
+			gs_texrender_destroy(ctx.texrender);
 	obs_leave_graphics();
+	
 done:
-	blog(LOG_DEBUG, "[%s] Hero detection thread done", __func__);
 	os_atomic_store_bool(&ctx.filter->hero_detection_running, false);
+	blog(LOG_DEBUG, "[%s] Hero detection thread done", __func__);
 	return NULL;
 }
