@@ -61,7 +61,7 @@ static uint32_t hero_watcher_height(void *data)
 	return (uint32_t)filter->height;
 }
 
-static const char *get_tech_name_and_multiplier(enum gs_color_space current_space, enum gs_color_space source_space,
+const char *get_tech_name_and_multiplier(enum gs_color_space current_space, enum gs_color_space source_space,
 						float *multiplier)
 {
 	const char *tech_name = "Draw";
@@ -114,22 +114,18 @@ static void hero_watcher_render(void *data, gs_effect_t *effect)
 
 	struct hero_watcher_data *filter = data;
 
+	const enum gs_color_space source_space = obs_source_get_color_space(
+	obs_filter_get_target(filter->context), OBS_COUNTOF(preferred_spaces), preferred_spaces);
+	float multiplier;
+	const char *technique = get_tech_name_and_multiplier(gs_get_color_space(), source_space, &multiplier);
+	filter->format = gs_get_format_from_space(source_space);
+
 	if (!filter->preview || !filter->effect) {
 		obs_source_skip_video_filter(filter->context);
 		return;
 	}
+	
 
-	const enum gs_color_space preferred_spaces[] = {
-		GS_CS_SRGB,
-		GS_CS_SRGB_16F,
-		GS_CS_709_EXTENDED,
-	};
-
-	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_target(filter->context), OBS_COUNTOF(preferred_spaces), preferred_spaces);
-	float multiplier;
-	const char *technique = get_tech_name_and_multiplier(gs_get_color_space(), source_space, &multiplier);
-	const enum gs_color_format format = gs_get_format_from_space(source_space);
 	if (obs_source_process_filter_begin_with_color_space(filter->context, format, source_space,
 							     OBS_NO_DIRECT_RENDERING)) {
 		gs_effect_set_vec2(filter->param_mul, &filter->mul_val);
@@ -183,7 +179,7 @@ static obs_properties_t *hero_watcher_properties(void *data)
 	obs_properties_add_int(crop_group_props, "bottom", obs_module_text("CropBottom"), -8192, 8192, 1);
 
 	// Tagging Settings
-	obs_properties_add_int(props, "refresh_seconds", obs_module_text("RefreshTimer"), 15, 300, 1);
+	obs_properties_add_int(props, "refresh_seconds", obs_module_text("RefreshTimer"), 10, 300, 1);
 	obs_properties_add_bool(props, "tagging_enabled", obs_module_text("TaggingEnable"));
 
 	return props;
