@@ -243,7 +243,7 @@ static void calc_crop_dimensions(struct hero_watcher_data *filter, struct vec2 *
 
 static void init_hero_detection(struct hero_watcher_data *filter)
 {
-    if (os_atomic_load_bool(&filter->hero_detection_running))
+    if (os_atomic_load_bool(&filter->hero_detection_running) || !filter->color_format || filter->color_format == GS_UNKNOWN)
         return;
 
     os_atomic_store_bool(&filter->hero_detection_running, true);

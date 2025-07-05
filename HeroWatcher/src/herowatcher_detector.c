@@ -87,8 +87,11 @@ void *hero_detection_thread(void *data)
 			
 			}
 			blog(LOG_DEBUG, "[%s] Created texrender and stage surface successfully", __func__);
-			struct vec4 clear_color = {1.0f, 0.0f, 0.0f, 1.0f};
-			gs_clear(GS_CLEAR_COLOR, &clear_color, 0.0f, 0);
+
+			gs_ortho(0.0f, (float)ctx.crop_width, 0.0f, (float)ctx.crop_height, -100.0f, 100.0f);
+			gs_set_viewport(0, 0, ctx.crop_width, ctx.crop_height);
+			obs_source_video_render(ctx.target);
+			
 		gs_texrender_end(ctx.texrender);
 
 		blog(LOG_DEBUG, "[%s] Grabbing cropped image from GPU", __func__);
@@ -96,8 +99,7 @@ void *hero_detection_thread(void *data)
 		if (tex)
 		{
 			gs_stage_texture(ctx.stage, tex);
-			gs_flush(); 
-			os_sleepto_ns(os_gettime_ns() + 20 * 1000000); 
+			gs_flush();
 			hero_crop_save(&ctx);
 		} else {
 			blog(LOG_ERROR, "[%s] Failed to get texture from texrender", __func__);
