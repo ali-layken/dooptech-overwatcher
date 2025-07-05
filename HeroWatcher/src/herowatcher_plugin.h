@@ -6,6 +6,12 @@
 #include <graphics/graphics.h>
 #include <obs.h>
 
+static const enum gs_color_space preferred_spaces[] = {
+	GS_CS_SRGB,
+	GS_CS_SRGB_16F,
+	GS_CS_709_EXTENDED,
+};
+
 struct hero_watcher_data {
     // OBS Plugin API Members
     obs_source_t *context;
@@ -34,8 +40,9 @@ struct hero_watcher_data {
 	bool tagging;
 	bool hero_detection_running;
     pthread_t hero_thread;
+	enum gs_color_space source_space;
 	enum gs_color_format color_format;
-
+	const char * technique;
 };
 
 const char *get_tech_name_and_multiplier(enum gs_color_space current_space, enum gs_color_space source_space,

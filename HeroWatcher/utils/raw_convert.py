@@ -5,7 +5,7 @@ import sys
 WIDTH = 1920  # example
 HEIGHT = 1080  # example
 
-with open("../crop_1751746813.raw", "rb") as f:
+with open("../crop_1751749626.raw", "rb") as f:
     data = f.read()
 
 img = Image.frombytes("RGBA", (WIDTH, HEIGHT), data)
