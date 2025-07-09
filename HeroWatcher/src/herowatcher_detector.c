@@ -1,5 +1,6 @@
 #include "herowatcher_detector.h"
 #include "herowatcher_plugin.h"
+#include "herowatcher_matching.h"
 
 struct hero_crop_context {
 	obs_source_t *target;
@@ -35,29 +36,6 @@ static bool hero_crop_init(struct hero_crop_context *ctx, void *data)
 	return true;
 }
 
-static void hero_crop_save(struct hero_crop_context *ctx)
-{
-	uint8_t *savedata;
-	uint32_t linesize;
-	bool mapped = gs_stagesurface_map(ctx->stage, &savedata, &linesize);
-
-	if (mapped) {
-		const char *filename = "crop_test.raw";
-
-		FILE *f = os_fopen(filename, "wb");
-		if (f) {
-			for (uint32_t y = 0; y < ctx->crop_height; ++y) {
-				fwrite(savedata + y * linesize, 1, ctx->crop_width * 4, f);
-			}
-			fclose(f);
-			blog(LOG_INFO, "[%s] Saved cropped frame to %s", __func__, filename);
-		} else {
-			blog(LOG_ERROR, "[%s] Failed to open file %s", __func__, filename);
-		}
-
-		gs_stagesurface_unmap(ctx->stage);
-	}
-}
 
 void *hero_detection_thread(void *data)
 {
@@ -87,7 +65,12 @@ void *hero_detection_thread(void *data)
 		{
 			gs_stage_texture(ctx.stage, tex);
 			gs_flush();
-			hero_crop_save(&ctx);
+			uint8_t *mapped_data;
+			uint32_t linesize;
+			if (gs_stagesurface_map(ctx.stage, &mapped_data, &linesize)) {
+    			do_template_match(mapped_data, ctx.crop_width, ctx.crop_height, linesize);
+    			gs_stagesurface_unmap(ctx.stage);
+			}
 		} else {
 			blog(LOG_ERROR, "[%s] Failed to get texture from texrender", __func__);
 		}
@@ -96,7 +79,7 @@ void *hero_detection_thread(void *data)
 		if (ctx.texrender)
 			gs_texrender_destroy(ctx.texrender);
 	obs_leave_graphics();
-	
+
 done:
 	os_atomic_store_bool(&ctx.filter->hero_detection_running, false);
 	blog(LOG_DEBUG, "[%s] Hero detection thread done", __func__);
