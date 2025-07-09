@@ -8,6 +8,8 @@ struct hero_crop_context {
 	gs_stagesurf_t *stage;
 	uint32_t crop_width;
 	uint32_t crop_height;
+	uint32_t crop_left;
+	uint32_t crop_top;
 	struct hero_watcher_data *filter;
 };
 
@@ -27,6 +29,8 @@ static bool hero_crop_init(struct hero_crop_context *ctx, void *data)
 	uint32_t source_height = obs_source_get_height(ctx->target);
 	ctx->crop_width = (uint32_t)(ctx->filter->mul_val.x * source_width);
 	ctx->crop_height = (uint32_t)(ctx->filter->mul_val.y * source_height);
+	ctx->crop_left = (uint32_t)(ctx->filter->add_val.x * source_width);
+	ctx->crop_top = (uint32_t)(ctx->filter->add_val.y * source_height);
 	blog(LOG_DEBUG, "[%s] crop_width: %u, crop_height: %u", __func__, ctx->crop_width, ctx->crop_height);
 	if (ctx->crop_width == 0 || ctx->crop_height == 0) {
 		blog(LOG_ERROR, "[%s] Invalid crop values!", __func__);
@@ -55,7 +59,11 @@ void *hero_detection_thread(void *data)
 
 			gs_ortho(0.0f, (float)ctx.crop_width, 0.0f, (float)ctx.crop_height, -100.0f, 100.0f);
 			gs_set_viewport(0, 0, ctx.crop_width, ctx.crop_height);
+
+			gs_matrix_push();
+			gs_matrix_translate3f(-(float)ctx.crop_left, -(float)ctx.crop_top, 0.0f);
 			obs_source_video_render(ctx.target);
+			gs_matrix_pop();
 			
 		gs_texrender_end(ctx.texrender);
 
